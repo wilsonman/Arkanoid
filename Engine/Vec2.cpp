@@ -55,10 +55,10 @@ Vec2& Vec2::Normalize()
 
 Vec2 Vec2::GetNormalized() const
 {
-	const float len = GetLength();
-	if (len != 0.0f)
+	const double len = GetLength();
+	if (len != 0.0)
 	{
-		return *this * (1.0f / len);
+		return *this * (1.0 / len);
 	}
 	return *this;
 }

@@ -32,7 +32,7 @@ bool Paddle::DoBallCollision(Ball& ball)
 				|| (ballPos.x >= rect.left && ballPos.x <= rect.right))
 			{
 				Vec2 dir;
-				const float xDifference = ballPos.x - pos.x;
+				const double xDifference = ballPos.x - pos.x;
 				if (std::abs(xDifference) < fixedZoneHalfWidth)
 				{
 					if (xDifference < 0.0f)
