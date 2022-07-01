@@ -89,8 +89,8 @@ Graphics::Graphics(HWNDKey& key)
 	ComPtr<ID3D11Resource> pBackBuffer;
 	if (FAILED(hr = pSwapChain->GetBuffer(
 		0,
-		__uuidof( ID3D11Texture2D ),
-		(LPVOID*)&pBackBuffer )))
+		__uuidof(ID3D11Texture2D),
+		(LPVOID*)&pBackBuffer)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Getting back buffer");
 	}
@@ -99,7 +99,7 @@ Graphics::Graphics(HWNDKey& key)
 	if (FAILED(hr = pDevice->CreateRenderTargetView(
 		pBackBuffer.Get(),
 		nullptr,
-		&pRenderTargetView )))
+		&pRenderTargetView)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Creating render target view on backbuffer");
 	}
@@ -135,7 +135,7 @@ Graphics::Graphics(HWNDKey& key)
 	sysTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	sysTexDesc.MiscFlags = 0;
 	// create the texture
-	if (FAILED(hr = pDevice->CreateTexture2D( &sysTexDesc,nullptr,&pSysBufferTexture )))
+	if (FAILED(hr = pDevice->CreateTexture2D(&sysTexDesc, nullptr, &pSysBufferTexture)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Creating sysbuffer texture");
 	}
@@ -145,8 +145,8 @@ Graphics::Graphics(HWNDKey& key)
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
 	// create the resource view on the texture
-	if (FAILED(hr = pDevice->CreateShaderResourceView( pSysBufferTexture.Get(),
-		&srvDesc,&pSysBufferTextureView )))
+	if (FAILED(hr = pDevice->CreateShaderResourceView(pSysBufferTexture.Get(),
+		&srvDesc, &pSysBufferTextureView)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Creating view on sysBuffer texture");
 	}
@@ -157,9 +157,9 @@ Graphics::Graphics(HWNDKey& key)
 	// Ignore the intellisense error "namespace has no member"
 	if (FAILED(hr = pDevice->CreatePixelShader(
 		FramebufferShaders::FramebufferPSBytecode,
-		sizeof( FramebufferShaders::FramebufferPSBytecode ),
+		sizeof(FramebufferShaders::FramebufferPSBytecode),
 		nullptr,
-		&pPixelShader )))
+		&pPixelShader)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Creating pixel shader");
 	}
@@ -170,9 +170,9 @@ Graphics::Graphics(HWNDKey& key)
 	// Ignore the intellisense error "namespace has no member"
 	if (FAILED(hr = pDevice->CreateVertexShader(
 		FramebufferShaders::FramebufferVSBytecode,
-		sizeof( FramebufferShaders::FramebufferVSBytecode ),
+		sizeof(FramebufferShaders::FramebufferVSBytecode),
 		nullptr,
-		&pVertexShader )))
+		&pVertexShader)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Creating vertex shader");
 	}
@@ -196,7 +196,7 @@ Graphics::Graphics(HWNDKey& key)
 	bd.CPUAccessFlags = 0u;
 	D3D11_SUBRESOURCE_DATA initData = {};
 	initData.pSysMem = vertices;
-	if (FAILED(hr = pDevice->CreateBuffer( &bd,&initData,&pVertexBuffer )))
+	if (FAILED(hr = pDevice->CreateBuffer(&bd, &initData, &pVertexBuffer)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Creating vertex buffer");
 	}
@@ -211,10 +211,10 @@ Graphics::Graphics(HWNDKey& key)
 	};
 
 	// Ignore the intellisense error "namespace has no member"
-	if (FAILED(hr = pDevice->CreateInputLayout( ied,2,
+	if (FAILED(hr = pDevice->CreateInputLayout(ied, 2,
 		FramebufferShaders::FramebufferVSBytecode,
-		sizeof( FramebufferShaders::FramebufferVSBytecode ),
-		&pInputLayout )))
+		sizeof(FramebufferShaders::FramebufferVSBytecode),
+		&pInputLayout)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Creating input layout");
 	}
@@ -230,7 +230,7 @@ Graphics::Graphics(HWNDKey& key)
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	if (FAILED(hr = pDevice->CreateSamplerState( &sampDesc,&pSamplerState )))
+	if (FAILED(hr = pDevice->CreateSamplerState(&sampDesc, &pSamplerState)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Creating sampler state");
 	}
@@ -238,6 +238,71 @@ Graphics::Graphics(HWNDKey& key)
 	// allocate memory for sysbuffer (16-byte aligned for faster access)
 	pSysBuffer = reinterpret_cast<Color*>(
 		_aligned_malloc(sizeof(Color) * Graphics::ScreenWidth * Graphics::ScreenHeight, 16u));
+}
+
+void Graphics::DrawCircle(int x, int y, int radius, Color c)
+{
+	const int rad_sq = radius * radius;
+	for (int y_loop = y - radius + 1; y_loop < y + radius; y_loop++)
+	{
+		for (int x_loop = x - radius + 1; x_loop < x + radius; x_loop++)
+		{
+			const int x_diff = x - x_loop;
+			const int y_diff = y - y_loop;
+			if (x_diff * x_diff + y_diff * y_diff <= rad_sq)
+			{
+				PutPixel(x_loop, y_loop, c);
+			}
+		}
+	}
+}
+
+void Graphics::DrawIsoRightTriUL(int x, int y, int size, Color c)
+{
+	for (int loop_y = y; loop_y < y + size; loop_y++)
+	{
+		const int cur_line = loop_y - y;
+		for (int loop_x = x; loop_x < x + size - cur_line; loop_x++)
+		{
+			PutPixel(loop_x, loop_y, c);
+		}
+	}
+}
+
+void Graphics::DrawIsoRightTriUR(int x, int y, int size, Color c)
+{
+	for (int loop_y = y; loop_y < y + size; loop_y++)
+	{
+		const int cur_line = loop_y - y;
+		for (int loop_x = x + cur_line; loop_x < x + size; loop_x++)
+		{
+			PutPixel(loop_x, loop_y, c);
+		}
+	}
+}
+
+void Graphics::DrawIsoRightTriLL(int x, int y, int size, Color c)
+{
+	for (int loop_y = y; loop_y < y + size; loop_y++)
+	{
+		const int cur_line = loop_y - y;
+		for (int loop_x = x; loop_x < x + cur_line; loop_x++)
+		{
+			PutPixel(loop_x, loop_y, c);
+		}
+	}
+}
+
+void Graphics::DrawIsoRightTriLR(int x, int y, int size, Color c)
+{
+	for (int loop_y = y; loop_y < y + size; loop_y++)
+	{
+		const int cur_line = loop_y - y;
+		for (int loop_x = x + size - cur_line; loop_x < x + size; loop_x++)
+		{
+			PutPixel(loop_x, loop_y, c);
+		}
+	}
 }
 
 Graphics::~Graphics()
@@ -252,13 +317,18 @@ Graphics::~Graphics()
 	if (pImmediateContext) pImmediateContext->ClearState();
 }
 
+RectF Graphics::GetScreenRect()
+{
+	return { 0.0f,float(ScreenWidth),0.0f,float(ScreenHeight) };
+}
+
 void Graphics::EndFrame()
 {
 	HRESULT hr;
 
 	// lock and map the adapter memory for copying over the sysbuffer
-	if (FAILED(hr = pImmediateContext->Map( pSysBufferTexture.Get(),0u,
-		D3D11_MAP_WRITE_DISCARD,0u,&mappedSysBufferTexture )))
+	if (FAILED(hr = pImmediateContext->Map(pSysBufferTexture.Get(), 0u,
+		D3D11_MAP_WRITE_DISCARD, 0u, &mappedSysBufferTexture)))
 	{
 		throw CHILI_GFX_EXCEPTION(hr, L"Mapping sysbuffer");
 	}
@@ -288,7 +358,7 @@ void Graphics::EndFrame()
 	pImmediateContext->Draw(6u, 0u);
 
 	// flip back/front buffers
-	if (FAILED(hr = pSwapChain->Present( 1u,0u )))
+	if (FAILED(hr = pSwapChain->Present(1u, 0u)))
 	{
 		if (hr == DXGI_ERROR_DEVICE_REMOVED)
 		{
@@ -316,6 +386,26 @@ void Graphics::PutPixel(int x, int y, Color c)
 	pSysBuffer[Graphics::ScreenWidth * y + x] = c;
 }
 
+void Graphics::DrawRect(int x0, int y0, int x1, int y1, Color c)
+{
+	if (x0 > x1)
+	{
+		std::swap(x0, x1);
+	}
+	if (y0 > y1)
+	{
+		std::swap(y0, y1);
+	}
+
+	for (int y = y0; y < y1; ++y)
+	{
+		for (int x = x0; x < x1; ++x)
+		{
+			PutPixel(x, y, c);
+		}
+	}
+}
+
 
 //////////////////////////////////////////////////
 //           Graphics Exception
@@ -334,17 +424,17 @@ std::wstring Graphics::Exception::GetFullMessage() const
 	const std::wstring& note = GetNote();
 	const std::wstring location = GetLocation();
 	return (!errorName.empty()
-		        ? std::wstring(L"Error: ") + errorName + L"\n"
-		        : empty)
+		? std::wstring(L"Error: ") + errorName + L"\n"
+		: empty)
 		+ (!errorDesc.empty()
-			   ? std::wstring(L"Description: ") + errorDesc + L"\n"
-			   : empty)
+			? std::wstring(L"Description: ") + errorDesc + L"\n"
+			: empty)
 		+ (!note.empty()
-			   ? std::wstring(L"Note: ") + note + L"\n"
-			   : empty)
+			? std::wstring(L"Note: ") + note + L"\n"
+			: empty)
 		+ (!location.empty()
-			   ? std::wstring(L"Location: ") + location
-			   : empty);
+			? std::wstring(L"Location: ") + location
+			: empty);
 }
 
 std::wstring Graphics::Exception::GetErrorName() const

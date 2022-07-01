@@ -33,23 +33,19 @@ public:
 	{
 	}
 
-	const std::wstring& GetNote() const
-	{
+	const std::wstring& GetNote() const {
 		return note;
 	}
 
-	const std::wstring& GetFile() const
-	{
+	const std::wstring& GetFile() const {
 		return file;
 	}
 
-	unsigned int GetLine() const
-	{
+	unsigned int GetLine() const {
 		return line;
 	}
 
-	std::wstring GetLocation() const
-	{
+	std::wstring GetLocation() const {
 		return std::wstring(L"Line [") + std::to_wstring(line) + L"] in " + file;
 	}
 
